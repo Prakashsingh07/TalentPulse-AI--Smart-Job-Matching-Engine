@@ -57,7 +57,7 @@ TalentPulse-AI/
 │   ├── Data/                        # JobPortalDbContext.cs & DbInitializer.cs
 │   ├── Models/                      # User, Job, Application, Profile Entities
 │   ├── Services/                    # NlpMatchingEngine.cs (C# Cosine Engine)
-│   ├── appsettings.json             # SQL Server Connection Strings
+│   ├── appsettings.json             # Application Configuration
 │   ├── server.js                    # API Proxy & Swagger Documentation
 │   └── JobPortal.API.csproj
 └── frontend/                        # React JS + TypeScript Frontend
@@ -90,7 +90,7 @@ cd frontend
 npm install
 npm run dev
 ```
-Access the application at [http://localhost:3000](http://localhost:3000).
+Access the application at `http://localhost:3000`.
 
 ---
 
@@ -100,31 +100,21 @@ cd backend
 dotnet restore
 dotnet run
 ```
-Access the Swagger UI at [http://localhost:5000/swagger](http://localhost:5000/swagger).
+Access the Swagger UI at `http://localhost:5000/swagger`.
 
 ---
 
-## 🗄️ SQL Server Database Configuration
+## 🗄️ Database Configuration
 
-Update your connection string in `backend/appsettings.json`:
+Configure your database connection string in `backend/appsettings.json` or environment configuration:
 
 ```json
 "ConnectionStrings": {
-  "DefaultConnection": "Server=localhost;Database=JOBPORTAL;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
+  "DefaultConnection": "Server=YOUR_SERVER_NAME;Database=YOUR_DATABASE_NAME;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
 }
 ```
 
-Tables (`Users`, `EmployerProfiles`, `JobSeekerProfiles`, `Jobs`, `Applications`) are automatically created and seeded on API startup via `DbInitializer.cs`.
-
----
-
-## 🔑 Pre-Configured Test Credentials
-
-| Role | Username / Email | Password | Scope |
-| :--- | :--- | :--- | :--- |
-| 🛡️ **Permanent Admin** | **`Prakash07`** | **`1234`** | System Admin Control Suite |
-| 👨‍🎓 **Student** | **`student@dev.com`** | **`1234`** | Job Search, AI Fit, Resume Profiler |
-| 🏢 **Employer** | **`employer@nexustech.io`** | **`1234`** | Job Posting, AI Applicant Screener |
+Tables (`Users`, `EmployerProfiles`, `JobSeekerProfiles`, `Jobs`, `Applications`) are automatically initialized on API startup via `DbInitializer.cs`.
 
 ---
 
