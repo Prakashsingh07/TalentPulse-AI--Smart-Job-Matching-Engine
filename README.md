@@ -1,6 +1,26 @@
 # 🚀 TalentPulse AI - Smart Job Matching Engine
 
-> An enterprise-grade, full-stack **Job Portal System** connecting job seekers and employers with intelligent **NLP-based resume matching**, real-time **Cosine Similarity fit scoring**, and multi-stage **Admin Approval Workflows**.
+> An enterprise-grade, full-stack **Job Portal System** architected with **SOLID Principles**, connecting job seekers and employers with intelligent **NLP-based resume matching**, real-time **Cosine Similarity fit scoring**, **JWT Security**, and multi-stage **Admin Approval Workflows**.
+
+---
+
+## 🏗️ SOLID Architecture & Design Patterns
+
+The codebase is built from the ground up following **SOLID Principles**:
+
+1. **Single Responsibility Principle (SRP)**:
+   - **Controllers**: Thin HTTP orchestrators handling request/response serialization.
+   - **Services**: Dedicated domain logic for Authentication, Jobs, Applications, Admin workflows, and NLP matching.
+   - **Repositories**: Isolated Entity Framework Core & database queries.
+   - **Middleware**: Global exception handling (`ExceptionHandlingMiddleware`) handling cross-cutting concerns.
+2. **Open/Closed Principle (OCP)**:
+   - **Extensible NLP Strategy**: `ISkillExtractor` and `ITextSimilarityCalculator` strategy interfaces allow plugging in new NLP models (e.g. BERT or LLM vector embeddings) without modifying core matching logic.
+3. **Liskov Substitution Principle (LSP)**:
+   - Interface contracts (`IUserRepository`, `IJobRepository`, `IApplicationRepository`) allow seamless substitution between EF Core SQL Server, SQLite, or In-Memory implementations.
+4. **Interface Segregation Principle (ISP)**:
+   - Fine-grained service interfaces (`IAuthService`, `IJobService`, `IApplicationService`, `IAdminService`, `IPasswordHasher`, `IJwtTokenGenerator`).
+5. **Dependency Inversion Principle (DIP)**:
+   - Controllers and services depend strictly on interfaces injected via ASP.NET Core Dependency Injection.
 
 ---
 
@@ -44,6 +64,8 @@ $$\text{Final AI Match Score} = \text{Skill Match Ratio (60\%)} + \text{TF-IDF C
 | **Frontend** | React JS, TypeScript, Vite, Custom Glassmorphism CSS System, Lucide Icons |
 | **Backend API** | C# ASP.NET Core 8 Web API, Express Node.js API Proxy |
 | **Database & ORM** | Microsoft SQL Server (SSMS), Entity Framework Core 8, SQLite |
+| **Security** | JWT Bearer Tokens, SHA256/PBKDF2 Password Hashing |
+| **Deployment** | Docker, Docker Compose, Nginx Reverse Proxy |
 | **AI / NLP** | TF-IDF Vector Space Model, Cosine Similarity Algorithm, Skill Taxonomy Parser |
 
 ---
@@ -52,69 +74,68 @@ $$\text{Final AI Match Score} = \text{Skill Match Ratio (60\%)} + \text{TF-IDF C
 
 ```
 TalentPulse-AI/
-├── backend/                         # ASP.NET Core 8 API & Node Server
-│   ├── Controllers/                 # Auth, Jobs, Admin, Applications Controllers
-│   ├── Data/                        # JobPortalDbContext.cs & DbInitializer.cs
-│   ├── Models/                      # User, Job, Application, Profile Entities
-│   ├── Services/                    # NlpMatchingEngine.cs (C# Cosine Engine)
-│   ├── appsettings.json             # Application Configuration
-│   ├── server.js                    # API Proxy & Swagger Documentation
-│   └── JobPortal.API.csproj
-└── frontend/                        # React JS + TypeScript Frontend
-    ├── src/
-    │   ├── components/              # Navbar, HeroSection, JobCard, Modals, AuthModal
-    │   ├── pages/                   # SeekerDashboard, EmployerDashboard, AdminDashboard
-    │   ├── services/                # nlpEngine.ts, mockBackend.ts
-    │   ├── styles/                  # index.css (Glassmorphic Theme)
-    │   ├── types/                   # TypeScript Type Definitions
-    │   ├── App.tsx                  # App Router & State Manager
-    │   └── main.tsx
-    ├── package.json
-    └── vite.config.ts
+├── backend/                         # ASP.NET Core 8 API & Node Server (SOLID Architecture)
+│   ├── Controllers/                 # HTTP API Controllers (Thin Orchestrators)
+│   ├── DTOs/                        # Data Transfer Objects
+│   ├── Data/                        # JobPortalDbContext & DbInitializer
+│   ├── Middleware/                  # ExceptionHandlingMiddleware
+│   ├── Models/                      # Domain Entities (User, Job, JobApplication)
+│   ├── Repositories/                # Repository Abstraction Layer (DIP & LSP)
+│   ├── Services/                    # Domain Business Logic & NLP Matching Engine
+│   ├── appsettings.json             # Environment Config
+│   ├── Dockerfile.backend           # Multi-Stage Backend Docker Build
+│   ├── JobPortal.API.csproj
+│   └── server.js                    # Modular Express Proxy Server
+├── frontend/                        # React JS + TypeScript Frontend
+│   ├── src/
+│   │   ├── api/                     # API Client & Endpoint Abstractions
+│   │   ├── components/              # Glassmorphic UI Components
+│   │   ├── hooks/                   # Custom React Hooks (useAuth, useJobs, useApplications)
+│   │   ├── pages/                   # Dashboards (Seeker, Employer, Admin)
+│   │   ├── services/                # nlpEngine.ts, mockBackend.ts
+│   │   ├── types/                   # TypeScript Interfaces
+│   │   ├── App.tsx                  # App Router & State Manager
+│   │   └── main.tsx
+│   ├── Dockerfile.frontend          # Nginx Production Container
+│   ├── nginx.conf                   # Nginx SPA Routing & Reverse Proxy
+│   └── vite.config.ts
+├── docker-compose.yml               # Container Orchestration (Frontend, Backend, SQL Server)
+└── .env.example                     # Environment Configuration Template
 ```
 
 ---
 
-## ⚡ Getting Started
+## ⚡ Getting Started & Deployment
 
-### 1. Prerequisites
-- **Node.js**: v18+ and npm
-- **.NET SDK**: v8.0+ (Optional for C# API)
-- **SQL Server**: SSMS (Localhost / Named Instance)
+### 🐳 Option 1: 1-Click Production Deployment with Docker Compose (Recommended)
+
+Run the full stack (Frontend + ASP.NET Core Web API + SQL Server Database) with a single command:
+
+```bash
+docker-compose up --build
+```
+- **Frontend App**: `http://localhost:3000`
+- **Backend API & Swagger**: `http://localhost:5000/swagger`
 
 ---
 
-### 2. Frontend Setup (React JS)
+### 💻 Option 2: Local Development Setup
+
+#### 1. Frontend Setup (React JS)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Access the application at `http://localhost:3000`.
+Access the frontend at `http://localhost:3000`.
 
----
-
-### 3. Backend Setup (ASP.NET Core 8 Web API)
+#### 2. Backend Setup (.NET 8 Web API)
 ```bash
 cd backend
 dotnet restore
 dotnet run
 ```
-Access the Swagger UI at `http://localhost:5000/swagger`.
-
----
-
-## 🗄️ Database Configuration
-
-Configure your database connection string in `backend/appsettings.json` or environment configuration:
-
-```json
-"ConnectionStrings": {
-  "DefaultConnection": "Server=YOUR_SERVER_NAME;Database=YOUR_DATABASE_NAME;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
-}
-```
-
-Tables (`Users`, `EmployerProfiles`, `JobSeekerProfiles`, `Jobs`, `Applications`) are automatically initialized on API startup via `DbInitializer.cs`.
+Access the Swagger UI at `http://localhost:5000/swagger` and Health Check at `http://localhost:5000/health`.
 
 ---
 

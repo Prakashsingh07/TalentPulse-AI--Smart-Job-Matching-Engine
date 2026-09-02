@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
-import { User, Job, JobApplication, JobSeekerProfile } from './types';
+import { User, Job, JobSeekerProfile } from './types';
 import { mockBackend } from './services/mockBackend';
+import { useAuth } from './hooks/useAuth';
+import { useJobs } from './hooks/useJobs';
+import { useApplications } from './hooks/useApplications';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { JobCard } from './components/JobCard';
@@ -14,7 +17,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { Briefcase, Sparkles } from 'lucide-react';
 
 export function App() {
-  const [currentUser, setCurrentUser] = useState<User | null>(mockBackend.getCurrentUser());
+  const { currentUser, setCurrentUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('explore');
 
   // Search Filters
@@ -23,13 +26,14 @@ export function App() {
   const [jobType, setJobType] = useState('All');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 
-  // State Data
-  const [jobs, setJobs] = useState<Job[]>([]);
+  // Custom Hooks Data
+  const { jobs, pendingJobs, refreshJobs } = useJobs(keyword, location, jobType);
+  const { applications: myApplications, refreshApplications } = useApplications(currentUser?.id);
+
+  // Additional State Data
   const [seekerProfile, setSeekerProfile] = useState<JobSeekerProfile>(mockBackend.getSeekerProfile());
-  const [myApplications, setMyApplications] = useState<JobApplication[]>([]);
   const [systemStats, setSystemStats] = useState(mockBackend.getSystemStats());
   const [pendingEmployers, setPendingEmployers] = useState<User[]>([]);
-  const [pendingJobs, setPendingJobs] = useState<Job[]>([]);
 
   // Modals
   const [selectedJobForModal, setSelectedJobForModal] = useState<Job | null>(null);
@@ -46,27 +50,13 @@ export function App() {
   };
 
   const refreshData = () => {
-    const allPublishedJobs = mockBackend.getJobs({
-      status: 'Published',
-      keyword,
-      location,
-      jobType
-    });
-    setJobs(allPublishedJobs);
-
+    refreshJobs();
+    refreshApplications();
     setSeekerProfile(mockBackend.getSeekerProfile());
-    if (currentUser) {
-      setMyApplications(mockBackend.getApplicationsForSeeker(currentUser.id));
-    } else {
-      setMyApplications([]);
-    }
     setSystemStats(mockBackend.getSystemStats());
 
     const allUsers = mockBackend.getAllUsers();
     setPendingEmployers(allUsers.filter(u => u.role === 'Employer' && !u.isApproved));
-
-    const allJobsRaw = mockBackend.getJobs({});
-    setPendingJobs(allJobsRaw.filter(j => j.status === 'PendingApproval'));
   };
 
   useEffect(() => {
@@ -74,8 +64,7 @@ export function App() {
   }, [currentUser, keyword, location, jobType]);
 
   const handleLogout = () => {
-    mockBackend.logout();
-    setCurrentUser(null);
+    logout();
     setActiveTab('explore');
     showToast('You have signed out successfully.');
   };

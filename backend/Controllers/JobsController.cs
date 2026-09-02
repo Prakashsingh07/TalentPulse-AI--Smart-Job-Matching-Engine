@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using JobPortal.API.Data;
-using JobPortal.API.Models;
+using JobPortal.API.DTOs;
+using JobPortal.API.Services;
 
 namespace JobPortal.API.Controllers
 {
@@ -9,49 +8,33 @@ namespace JobPortal.API.Controllers
     [Route("api/[controller]")]
     public class JobsController : ControllerBase
     {
-        private readonly JobPortalDbContext _context;
+        private readonly IJobService _jobService;
 
-        public JobsController(JobPortalDbContext context)
+        public JobsController(IJobService jobService)
         {
-            _context = context;
+            _jobService = jobService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetJobs([FromQuery] string? keyword, [FromQuery] string? location, [FromQuery] string? jobType)
+        public async Task<IActionResult> GetJobs([FromQuery] JobQueryDto query)
         {
-            var query = _context.Jobs.Where(j => j.Status == JobStatus.Published).AsQueryable();
+            var result = await _jobService.GetPublishedJobsAsync(query);
+            return Ok(result);
+        }
 
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                var kw = keyword.ToLower();
-                query = query.Where(j => j.Title.ToLower().Contains(kw) || j.Description.ToLower().Contains(kw));
-            }
-
-            if (!string.IsNullOrWhiteSpace(location))
-            {
-                query = query.Where(j => j.Location.ToLower().Contains(location.ToLower()));
-            }
-
-            if (!string.IsNullOrWhiteSpace(jobType) && jobType != "All")
-            {
-                query = query.Where(j => j.JobType == jobType);
-            }
-
-            var result = await query.OrderByDescending(j => j.CreatedAt).ToListAsync();
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetJobById(Guid id)
+        {
+            var result = await _jobService.GetJobByIdAsync(id);
+            if (result == null) return NotFound("Job not found.");
             return Ok(result);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateJob([FromBody] Job job)
+        public async Task<IActionResult> CreateJob([FromBody] CreateJobDto dto)
         {
-            job.Id = Guid.NewGuid();
-            job.Status = JobStatus.PendingApproval; // Requires Admin Approval
-            job.CreatedAt = DateTime.UtcNow;
-
-            _context.Jobs.Add(job);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetJobs), new { id = job.Id }, job);
+            var result = await _jobService.CreateJobAsync(dto);
+            return CreatedAtAction(nameof(GetJobById), new { id = result.Id }, result);
         }
     }
 }

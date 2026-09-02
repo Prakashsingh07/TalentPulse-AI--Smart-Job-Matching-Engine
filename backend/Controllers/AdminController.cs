@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using JobPortal.API.Data;
-using JobPortal.API.Models;
+using JobPortal.API.Services;
 
 namespace JobPortal.API.Controllers
 {
@@ -9,55 +7,46 @@ namespace JobPortal.API.Controllers
     [Route("api/[controller]")]
     public class AdminController : ControllerBase
     {
-        private readonly JobPortalDbContext _context;
+        private readonly IAdminService _adminService;
 
-        public AdminController(JobPortalDbContext context)
+        public AdminController(IAdminService adminService)
         {
-            _context = context;
+            _adminService = adminService;
         }
 
         [HttpGet("pending-employers")]
         public async Task<IActionResult> GetPendingEmployers()
         {
-            var pending = await _context.Users
-                .Where(u => u.Role == UserRole.Employer && !u.IsApproved)
-                .ToListAsync();
-
-            return Ok(pending);
+            var result = await _adminService.GetPendingEmployersAsync();
+            return Ok(result);
         }
 
         [HttpPost("approve-employer/{id}")]
         public async Task<IActionResult> ApproveEmployer(Guid id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
-
-            user.IsApproved = true;
-            await _context.SaveChangesAsync();
-
+            await _adminService.ApproveEmployerAsync(id);
             return Ok(new { Message = "Employer approved successfully" });
         }
 
         [HttpGet("pending-jobs")]
         public async Task<IActionResult> GetPendingJobs()
         {
-            var pending = await _context.Jobs
-                .Where(j => j.Status == JobStatus.PendingApproval)
-                .ToListAsync();
-
-            return Ok(pending);
+            var result = await _adminService.GetPendingJobsAsync();
+            return Ok(result);
         }
 
         [HttpPost("approve-job/{id}")]
         public async Task<IActionResult> ApproveJob(Guid id)
         {
-            var job = await _context.Jobs.FindAsync(id);
-            if (job == null) return NotFound();
-
-            job.Status = JobStatus.Published;
-            await _context.SaveChangesAsync();
-
+            await _adminService.ApproveJobAsync(id);
             return Ok(new { Message = "Job published successfully" });
+        }
+
+        [HttpGet("metrics")]
+        public async Task<IActionResult> GetMetrics()
+        {
+            var result = await _adminService.GetSystemMetricsAsync();
+            return Ok(result);
         }
     }
 }
